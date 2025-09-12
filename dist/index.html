@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>문서 관리 (Static)</title>
+  <link rel="stylesheet" crossorigin href="/assets/index-DflCzW0T.css">
+</head>
+<body>
+  <h1>📂문서 관리</h1>
+  <input type="file" id="fileInput" multiple />
+  <table id="docTable">
+    <thead>
+      <tr><th>ID</th><th>Category</th><th>Title</th><th>Action</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div id="modal" class="modal hidden">
+    <h3>Edit Document</h3>
+    <input id="editTitle" />
+    <textarea id="editContent"></textarea>
+    <button id="saveBtn">Save</button>
+    <button id="deleteBtn">Delete</button>
+    <button id="closeBtn">Close</button>
+  </div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
