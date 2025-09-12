@@ -1,1 +1,0 @@
-Put Dexie.js, Fuse.js, Chart.js in this folder.
