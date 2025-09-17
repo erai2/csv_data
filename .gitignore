@@ -1,0 +1,19 @@
+# Environment files and secrets
+.env
+*.env
+.env.*
+*.env.local
+
+# Streamlit and state directories
+.streamlit/
+
+# Local databases and generated data
+*.db
+*.sqlite
+*.sqlite3
+
+# Application data directories
+gemeni_csv/data/
+gemeni_csv/chroma_db/
+
+gemeni_csv/rule_concept_dataset.csv
