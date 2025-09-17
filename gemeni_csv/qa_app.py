@@ -22,8 +22,22 @@ EMBEDDING_MODEL_NAME = "sentence-transformers/paraphrase-multilingual-MiniLM-L12
 LLM_MODEL_REPO_ID = "google/gemma-2-9b-it"
 
 # --- AI Q&A 및 LLM 관련 함수 ---
+def _get_directory_signature(path: os.PathLike[str] | str) -> float | None:
+    """Return a cache key derived from a directory's last modification time."""
+
+    directory = Path(path)
+    if not directory.exists():
+        return None
+    try:
+        return directory.stat().st_mtime
+    except OSError:
+        return None
+
+
 @st.cache_resource
-def load_vector_db():
+def load_vector_db(cache_key=None):
+    # cache_key is intentionally unused; it allows Streamlit to invalidate the cache
+    # when the on-disk database changes.
     if not os.path.exists(DB_DIRECTORY): return None
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
     return Chroma(persist_directory=DB_DIRECTORY, embedding_function=embeddings)
@@ -91,7 +105,8 @@ tab1, tab2, tab3 = st.tabs(["🤖 AI Q&A", "📚 지식 베이스 탐색기", "�
 
 with tab1:
     st.header("AI에게 질문하기")
-    db = load_vector_db()
+    db_signature = _get_directory_signature(DB_DIRECTORY)
+    db = load_vector_db(db_signature)
     if not db:
         st.info("사이드바에서 지식 파일을 업로드한 후 '데이터베이스 재생성' 버튼을 클릭하여 DB를 생성해주세요.")
     else:
