@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import json
 from parser import parse_documents
-from saju_analyzer import SajuAnalyzer
+from analyzer import SajuAnalyzer
 
 st.set_page_config(page_title="Saju Analyzer", layout="wide")
 
