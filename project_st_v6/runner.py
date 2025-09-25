@@ -1,6 +1,6 @@
 # saju_runner.py
 import os,json
-from saju_system import HeavenlyStem,EarthlyBranch,Pillar,Saju,ShishinManager,GungwiManager,SajuAnalyzer
+from system import HeavenlyStem,EarthlyBranch,Pillar,Saju,ShishinManager,GungwiManager,SajuAnalyzer
 from universal_parser import parse_documents
 from reportlab.platypus import SimpleDocTemplate,Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
