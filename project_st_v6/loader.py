@@ -1,6 +1,6 @@
 # saju_loader.py
 import json
-from saju_system import ShishinManager,GungwiManager
+from system import ShishinManager,GungwiManager
 
 def load_parsed_data(json_file="parsed_all.json"):
     data=json.load(open(json_file,encoding="utf-8"))
