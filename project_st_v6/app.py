@@ -5,7 +5,7 @@ import json
 import re
 from universal_parser import parse_documents
 from loader import load_parsed_data
-from system import Analyzer, HeavenlyStem, EarthlyBranch, Pillar, Saju
+from system import SajuAnalyzer, HeavenlyStem, EarthlyBranch, Pillar, Saju
 from runner import save_report
 
 # --- 사이드바 메뉴 ---
