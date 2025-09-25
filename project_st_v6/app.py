@@ -5,9 +5,9 @@ from saju_runner import run_analysis
 from merge_reports import merge_reports
 
 st.set_page_config(page_title="Saju Project",layout="wide")
-st.title("🔮 Saju Project Streamlit v6")
+st.title("🔮 Suri_v6")
 
-tab1,tab2,tab3=st.tabs(["📂 문서 파싱","📊 사주 분석","📑 보고서 관리"])
+tab1,tab2,tab3=st.tabs(["📂parsing","📊 analyzer","📑 report"])
 
 with tab1:
     st.header("문서 업로드 및 파싱")
@@ -22,7 +22,7 @@ with tab1:
         st.success("✅ parsed_all.json 생성")
 
 with tab2:
-    st.header("사주 분석")
+    st.header("분석")
     if st.button("분석 실행"):
         text=run_analysis()
         st.text_area("분석 결과",text,height=400)
