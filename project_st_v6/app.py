@@ -4,7 +4,7 @@ from universal_parser import parse_documents
 from runner import run_analysis
 from merge_reports import merge_reports
 
-st.set_page_config(page_title="Saju Project",layout="wide")
+st.set_page_config(page_title="Suri Project",layout="wide")
 st.title("🔮 Suri_v6")
 
 tab1,tab2,tab3=st.tabs(["📂parsing","📊 analyzer","📑 report"])
