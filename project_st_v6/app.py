@@ -1,7 +1,7 @@
 # app.py
 import streamlit as st,os,json
 from universal_parser import parse_documents
-from saju_runner import run_analysis
+from runner import run_analysis
 from merge_reports import merge_reports
 
 st.set_page_config(page_title="Saju Project",layout="wide")
