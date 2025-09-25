@@ -7,7 +7,7 @@ from analyzer import SajuAnalyzer
 
 st.set_page_config(page_title="Saju Analyzer", layout="wide")
 
-st.title("📚 수암명리 문헌 분석 시스템")
+st.title("📚 문헌 분석 시스템")
 
 # --- Step 1: 파일 업로드 ---
 st.header("1️⃣ 문서 업로드 & 파싱")
