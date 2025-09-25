@@ -1,109 +1,136 @@
 # saju_system.py
+import json
 from collections import defaultdict
 
-# 관계 세트
-CHONG = {('子','午'),('丑','未'),('寅','申'),('卯','酉'),('辰','戌'),('巳','亥')}
-HAP   = {('子','丑'),('寅','亥'),('卯','戌'),('巳','申'),('午','亥'),('辰','酉')}
-PO    = {('子','卯'),('卯','午'),('午','卯')}
-CHUAN = {('子','未'),('丑','午'),('寅','巳'),('申','亥')}
+# === (1) 기본 데이터 ===
+HEAVENLY_STEMS = {
+    '甲': {'ohaeng': '목', 'yinyang': '양'}, '乙': {'ohaeng': '목', 'yinyang': '음'},
+    '丙': {'ohaeng': '화', 'yinyang': '양'}, '丁': {'ohaeng': '화', 'yinyang': '음'},
+    '戊': {'ohaeng': '토', 'yinyang': '양'}, '己': {'ohaeng': '토', 'yinyang': '음'},
+    '庚': {'ohaeng': '금', 'yinyang': '양'}, '辛': {'ohaeng': '금', 'yinyang': '음'},
+    '壬': {'ohaeng': '수', 'yinyang': '양'}, '癸': {'ohaeng': '수', 'yinyang': '음'},
+}
+EARTHLY_BRANCHES = {
+    '子': {'ohaeng': '수', 'yinyang': '양'},
+    '丑': {'ohaeng': '토', 'yinyang': '음'},
+    '寅': {'ohaeng': '목', 'yinyang': '양'},
+    '卯': {'ohaeng': '목', 'yinyang': '음'},
+    '辰': {'ohaeng': '토', 'yinyang': '양'},
+    '巳': {'ohaeng': '화', 'yinyang': '음'},
+    '午': {'ohaeng': '화', 'yinyang': '양'},
+    '未': {'ohaeng': '토', 'yinyang': '음'},
+    '申': {'ohaeng': '금', 'yinyang': '양'},
+    '酉': {'ohaeng': '금', 'yinyang': '음'},
+    '戌': {'ohaeng': '토', 'yinyang': '양'},
+    '亥': {'ohaeng': '수', 'yinyang': '음'},
+}
+WUXING = {**{k: v['ohaeng'] for k, v in HEAVENLY_STEMS.items()},
+          **{k: v['ohaeng'] for k, v in EARTHLY_BRANCHES.items()}}
 
-WUXING = {"甲":"목","乙":"목","丙":"화","丁":"화","戊":"토","己":"토","庚":"금","辛":"금","壬":"수","癸":"수",
-          "子":"수","丑":"토","寅":"목","卯":"목","辰":"토","巳":"화","午":"화","未":"토","申":"금","酉":"금","戌":"토","亥":"수"}
-
+# === (2) 클래스 정의 ===
 class HeavenlyStem:
-    def __init__(self,name,ohaeng,yinyang):
-        self.name=name; self.ohaeng=ohaeng; self.yinyang=yinyang
+    def __init__(self, name):
+        self.name = name
+        self.ohaeng = HEAVENLY_STEMS[name]["ohaeng"]
+        self.yinyang = HEAVENLY_STEMS[name]["yinyang"]
+    def __repr__(self):
+        return f"천간({self.name})"
 
 class EarthlyBranch:
-    def __init__(self,name,ohaeng,yinyang,gijeong):
-        self.name=name; self.ohaeng=ohaeng; self.yinyang=yinyang; self.gijeong=gijeong
+    def __init__(self, name):
+        self.name = name
+        self.ohaeng = EARTHLY_BRANCHES[name]["ohaeng"]
+        self.yinyang = EARTHLY_BRANCHES[name]["yinyang"]
+    def __repr__(self):
+        return f"지지({self.name})"
 
 class Pillar:
-    def __init__(self,stem,branch,gungwi=None):
-        self.stem=stem; self.branch=branch; self.gungwi=gungwi
-    def __repr__(self): return f"{self.stem.name}{self.branch.name}주"
+    def __init__(self, stem, branch):
+        self.stem = HeavenlyStem(stem)
+        self.branch = EarthlyBranch(branch)
+    def __repr__(self):
+        return f"{self.stem.name}{self.branch.name}주"
 
 class Saju:
-    def __init__(self,year,month,day,time,gungwi_mgr):
-        self.year=year; self.month=month; self.day=day; self.time=time
-        self.year.gungwi=gungwi_mgr.get_gungwi("년주")
-        self.month.gungwi=gungwi_mgr.get_gungwi("월주")
-        self.day.gungwi=gungwi_mgr.get_gungwi("일주")
-        self.time.gungwi=gungwi_mgr.get_gungwi("시주")
-    def get_pillars(self): return [self.year,self.month,self.day,self.time]
+    def __init__(self, year, month, day, time):
+        self.year = year
+        self.month = month
+        self.day = day
+        self.time = time
+    def get_pillars(self):
+        return [self.year, self.month, self.day, self.time]
+    def __repr__(self):
+        return f"사주: {self.year}, {self.month}, {self.day}, {self.time}"
 
-class Shishin: 
-    def __init__(self,name,description,relations=None): 
-        self.name=name; self.description=description; self.relations=relations or {}
+class Shishin:
+    def __init__(self, name, description):
+        self.name = name
+        self.description = description
+    def __repr__(self):
+        return f"십신({self.name})"
 
 class Gungwi:
-    def __init__(self,name,life_stage,representative_kin,symbolic_meaning):
-        self.name=name; self.life_stage=life_stage; self.representative_kin=representative_kin; self.symbolic_meaning=symbolic_meaning
+    def __init__(self, name, life_stage, representative_kin, symbolic_meaning):
+        self.name = name
+        self.life_stage = life_stage
+        self.representative_kin = representative_kin
+        self.symbolic_meaning = symbolic_meaning
+    def __repr__(self):
+        return f"궁위({self.name})"
 
 class ShishinManager:
-    def __init__(self,data): self._map={n:Shishin(n,i['description'],i.get('relations')) for n,i in data.items()}
-    def get_shishin(self,n): return self._map.get(n)
+    def __init__(self, data):
+        self._shishins = {name: Shishin(name, info["description"]) for name, info in data.items()}
+    def get(self, name):
+        return self._shishins.get(name)
 
 class GungwiManager:
-    def __init__(self,data): self._map={n:Gungwi(n,i['life_stage'],i['representative_kin'],i['symbolic_meaning']) for n,i in data.items()}
-    def get_gungwi(self,n): return self._map.get(n)
+    def __init__(self, data):
+        self._gungwis = {name: Gungwi(name, **info) for name, info in data.items()}
+    def get(self, name):
+        return self._gungwis.get(name)
 
+# === (3) Analyzer 기본 틀 (문헌 기반) ===
 class SajuAnalyzer:
-    def __init__(self,saju,shishin_mgr,parsed_data=None):
-        self.saju=saju; self.shishin_mgr=shishin_mgr; self.parsed_data=parsed_data or {}
+    def __init__(self, saju=None, parsed_data_path="parsed_all.json"):
+        self.saju = saju
+        self.parsed_data_path = parsed_data_path
+        self.parsed_data = self._load_parsed_data()
+
+    def _load_parsed_data(self):
+        try:
+            with open(self.parsed_data_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {}
 
     def analyze_gungwi(self):
-        lines=["--- 궁위 분석 ---"]
+        if not self.saju:
+            return "⚠️ 사주 데이터 없음"
+        lines = ["--- 궁위 분석 ---"]
         for p in self.saju.get_pillars():
-            if p.gungwi:
-                lines.append(f"{p} → {p.gungwi.symbolic_meaning} ({p.gungwi.life_stage})")
+            lines.append(str(p))
         return "\n".join(lines)
 
-    def analyze_sipsin(self):
-        lines=["--- 십신 분석 ---"]
-        ilgan=self.saju.day.stem
-        for p in self.saju.get_pillars():
-            if p.stem.name==ilgan.name:
-                lines.append(f"{p}: 일간")
-            else:
-                lines.append(f"{p}: 기타")
+    def summarize_by_category(self):
+        cats = {"rule": [], "case": [], "concept": []}
+        for fname, doc in self.parsed_data.items():
+            for para in doc.get("paragraphs", []):
+                cat = para.get("category", "unknown")
+                if cat in cats:
+                    cats[cat].append(para["content"])
+        lines = ["--- 카테고리별 요약 ---"]
+        for k, v in cats.items():
+            lines.append(f"[{k.upper()}] {len(v)}개")
+            for i, txt in enumerate(v[:3], 1):
+                lines.append(f"{i}. {txt[:100]}...")
         return "\n".join(lines)
 
-    def analyze_branch_relations(self):
-        lines=["--- 지지 관계 ---"]
-        br=[p.branch.name for p in self.saju.get_pillars()]
-        for i in range(len(br)):
-            for j in range(i+1,len(br)):
-                a,b=br[i],br[j]
-                if (a,b) in CHONG or (b,a) in CHONG: lines.append(f"{a}-{b}: 충")
-                if (a,b) in HAP or (b,a) in HAP: lines.append(f"{a}-{b}: 합")
-                if (a,b) in PO or (b,a) in PO: lines.append(f"{a}-{b}: 파")
-                if (a,b) in CHUAN or (b,a) in CHUAN: lines.append(f"{a}-{b}: 천")
-        return "\n".join(lines)
-
-    def analyze_advanced_rules(self):
-        lines=["--- 고급 규칙 ---"]
-        for p in self.saju.get_pillars():
-            s,b=p.stem.name,p.branch.name
-            if WUXING.get(s)==WUXING.get(b): lines.append(f"{s}{b}: 실")
-            else: lines.append(f"{s}{b}: 허")
-        return "\n".join(lines)
-
-    def analyze_with_rules(self):
-        lines=["--- 문헌 규칙 기반 분석 ---"]
-        for k,v in self.parsed_data.items():
-            lines.append(f"▶ {k} 규칙")
-            for r in v: lines.append(f" - {r['rule']} (출처 {r['file']})")
-        return "\n".join(lines)
-
-    def analyze_unse(self,daewoon,sewun):
-        lines=["--- 대운·세운 응기 분석 ---"]
-        # 대운
-        lines.append(f"▶ 대운: {daewoon['stem']}{daewoon['branch']}")
-        if (daewoon['branch'],self.saju.day.branch.name) in CHONG: lines.append(" - 대운이 일지와 충 → 혼인/가정 불안정")
-        if (daewoon['branch'],self.saju.day.branch.name) in HAP: lines.append(" - 대운이 일지와 합 → 혼인/인연")
-        # 세운
-        lines.append(f"▶ 세운: {sewun['stem']}{sewun['branch']}")
-        if (sewun['branch'],self.saju.day.branch.name) in CHONG: lines.append(" - 세운이 일지와 충 → 사건 발생")
-        if (sewun['branch'],self.saju.day.branch.name) in HAP: lines.append(" - 세운이 일지와 합 → 혼인/연애 사건")
-        return "\n".join(lines)
+    def build_report(self):
+        report = []
+        report.append("=== 사주 분석 리포트 ===")
+        if self.saju:
+            report.append(f"\n[사주 구조]\n{self.saju}")
+        report.append("\n" + self.analyze_gungwi())
+        report.append("\n" + self.summarize_by_category())
+        return "\n".join(report)
