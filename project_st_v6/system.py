@@ -1,4 +1,3 @@
-# saju_system.py
 import json
 from collections import defaultdict
 
@@ -90,7 +89,7 @@ class GungwiManager:
     def get(self, name):
         return self._gungwis.get(name)
 
-# === (3) Analyzer 기본 틀 (문헌 기반) ===
+# === (3) Analyzer 확장 ===
 class SajuAnalyzer:
     def __init__(self, saju=None, parsed_data_path="parsed_all.json"):
         self.saju = saju
@@ -104,6 +103,7 @@ class SajuAnalyzer:
         except FileNotFoundError:
             return {}
 
+    # 궁위
     def analyze_gungwi(self):
         if not self.saju:
             return "⚠️ 사주 데이터 없음"
@@ -112,6 +112,7 @@ class SajuAnalyzer:
             lines.append(str(p))
         return "\n".join(lines)
 
+    # 카테고리 요약
     def summarize_by_category(self):
         cats = {"rule": [], "case": [], "concept": []}
         for fname, doc in self.parsed_data.items():
@@ -126,11 +127,55 @@ class SajuAnalyzer:
                 lines.append(f"{i}. {txt[:100]}...")
         return "\n".join(lines)
 
+    # 규칙 상세 (Markdown 표)
+    def analyze_rules(self):
+        details = {}
+        for fname, doc in self.parsed_data.items():
+            for para in doc.get("paragraphs", []):
+                if para["category"] == "rule" and para.get("rule_type"):
+                    details.setdefault(para["rule_type"], []).append({
+                        "file": fname,
+                        "id": para["id"],
+                        "content": para["content"]
+                    })
+
+        lines = ["--- 규칙 상세 (Markdown 표) ---"]
+        for rule_type, items in details.items():
+            lines.append(f"\n### {rule_type}")
+            lines.append("| 파일 | ID | 내용 |")
+            lines.append("|------|----|------|")
+            for item in items:
+                lines.append(f"| {item['file']} | {item['id']} | {item['content'].replace(chr(10), ' ')} |")
+        return "\n".join(lines)
+
+    # 사건화 조건
+    def analyze_events(self):
+        lines = ["--- 사건화 조건 ---"]
+        lines.append("재물: 財星 + 庫開 + 合/沖")
+        lines.append("직장: 官星 + 印星 → 官印相生格 or 帶象")
+        lines.append("혼인: 夫宮·夫星 / 妻宮·妻星이 合·沖·刑·破·入墓")
+        lines.append("자식: 子息宮·子息星이 入墓·庫開·穿倒")
+        lines.append("부모: 年/月柱 印星·食神의 합/충/형/穿")
+        return "\n".join(lines)
+
+    # 대운/세운 응기
+    def analyze_daeseun(self):
+        lines = ["--- 대운·세운 응기 ---"]
+        lines.append("▶ 대운: 10년 단위 → 천간 5년 / 지지 5년 분리")
+        lines.append("▶ 세운: 대운의 씨앗을 현실로 발현 (합/충/형/파/천/입묘 필요)")
+        lines.append("▶ 응기 사례:")
+        lines.append("  - 혼인: 배우자궁 합 → 결혼, 入墓 → 이혼")
+        lines.append("  - 승진: 官印相生格 성립 시")
+        lines.append("  - 재물: 財星 + 庫開")
+        return "\n".join(lines)
+
     def build_report(self):
-        report = []
-        report.append("=== 사주 분석 리포트 ===")
+        report = ["=== 사주 분석 리포트 ==="]
         if self.saju:
-            report.append(f"\n[사주 구조]\n{self.saju}")
+            report.append(f"[사주 구조]\n{self.saju}")
         report.append("\n" + self.analyze_gungwi())
         report.append("\n" + self.summarize_by_category())
+        report.append("\n" + self.analyze_rules())
+        report.append("\n" + self.analyze_events())
+        report.append("\n" + self.analyze_daeseun())
         return "\n".join(report)
