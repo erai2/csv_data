@@ -1,39 +1,23 @@
 # parser.py
 import re
+import json
 
 def parse_content(content: str):
-    """문서에서 규칙/개념/사례 문단 전체를 추출"""
-    parsed = {"rules": []}
+    """문서 내용에서 규칙/사례/용어 등 단순 패턴 기반 추출"""
+    rules = []
 
-    # 패턴 정의 (필요시 추가 가능)
-    patterns = {
-        "합": r".*합.*",
-        "충": r".*충.*",
-        "형": r".*형.*",
-        "파": r".*파.*",
-        "천": r".*천.*",
-        "묘고": r".*묘고.*",
-        "대상": r".*대상.*"
-    }
+    # 예시 패턴: "…의 상", "…법", "…원리", "…의미"
+    for match in re.finditer(r"([^\s]+의\s?(상|법|원리|의미))", content):
+        title = match.group(1)
+        rules.append({
+            "category": "rule",
+            "title": title,
+            "content": content[max(0, match.start()-50):match.end()+100]  # 앞뒤 문맥 포함
+        })
 
-    # 문단 단위로 분리
-    paragraphs = [p.strip() for p in content.split("\n") if p.strip()]
+    return {"rules": rules}
 
-    for p in paragraphs:
-        for cat, pat in patterns.items():
-            if re.search(pat, p):
-                parsed["rules"].append({
-                    "category": cat,
-                    "title": f"{cat} 관련 규칙",
-                    "content": p
-                })
-                break
-        else:
-            # 매칭 안 된 문단도 "기타"로 저장
-            parsed["rules"].append({
-                "category": "기타",
-                "title": p[:20],
-                "content": p
-            })
-
-    return parsed
+def save_parsed(data, filename="parsed_all.json"):
+    """저장 버튼 눌렀을 때만 실행"""
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
