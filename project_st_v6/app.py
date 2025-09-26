@@ -1,6 +1,6 @@
 import streamlit as st
 from parser import parse_documents
-from saju_system import SajuAnalyzer
+from system import SajuAnalyzer
 
 st.title("📊 DOCU parser")
 
