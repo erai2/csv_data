@@ -1,43 +1,39 @@
-import os, json
+# parser.py
+import re
 
-def parse_documents(folder="docs"):
-    parsed = {}
-    for fname in os.listdir(folder):
-        if not fname.endswith((".md", ".txt", ".csv")):
-            continue
-        with open(os.path.join(folder, fname), encoding="utf-8") as f:
-            text = f.read()
+def parse_content(content: str):
+    """문서에서 규칙/개념/사례 문단 전체를 추출"""
+    parsed = {"rules": []}
 
-        paragraphs = []
-        for i, block in enumerate(text.split("\n\n"), start=1):
-            block = block.strip()
-            if not block:
-                continue
-            category = "rule" if any(k in block for k in ["合", "沖", "刑", "破", "穿", "묘고", "대상"]) else "concept"
-            rule_type = None
-            if "合" in block: rule_type = "합"
-            elif "沖" in block: rule_type = "충"
-            elif "刑" in block: rule_type = "형"
-            elif "破" in block: rule_type = "파"
-            elif "穿" in block: rule_type = "천"
-            elif "묘고" in block: rule_type = "묘고"
-            elif "대상" in block: rule_type = "대상"
+    # 패턴 정의 (필요시 추가 가능)
+    patterns = {
+        "합": r".*합.*",
+        "충": r".*충.*",
+        "형": r".*형.*",
+        "파": r".*파.*",
+        "천": r".*천.*",
+        "묘고": r".*묘고.*",
+        "대상": r".*대상.*"
+    }
 
-            paragraphs.append({
-                "id": f"{fname}_{i}",
-                "category": category,
-                "rule_type": rule_type,
-                "content": block
+    # 문단 단위로 분리
+    paragraphs = [p.strip() for p in content.split("\n") if p.strip()]
+
+    for p in paragraphs:
+        for cat, pat in patterns.items():
+            if re.search(pat, p):
+                parsed["rules"].append({
+                    "category": cat,
+                    "title": f"{cat} 관련 규칙",
+                    "content": p
+                })
+                break
+        else:
+            # 매칭 안 된 문단도 "기타"로 저장
+            parsed["rules"].append({
+                "category": "기타",
+                "title": p[:20],
+                "content": p
             })
 
-        parsed[fname] = {"paragraphs": paragraphs}
-
-    os.makedirs("parsed", exist_ok=True)
-    with open("parsed/parsed_keywords.json", "w", encoding="utf-8") as f:
-        json.dump(parsed, f, ensure_ascii=False, indent=2)
-
     return parsed
-
-if __name__ == "__main__":
-    result = parse_documents("docs")
-    print("✅ 파싱 완료 → parsed/parsed_keywords.json")
