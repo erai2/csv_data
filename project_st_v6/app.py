@@ -4,7 +4,7 @@ import sqlite3
 import json
 from parser import parse_content
 from db import init_db, insert_rule, fetch_rules
-from saju_system import Saju, Pillar, HeavenlyStem, EarthlyBranch, SajuAnalyzer
+from system import Saju, Pillar, HeavenlyStem, EarthlyBranch, SajuAnalyzer
 
 DB_PATH = "saju.db"
 init_db()
