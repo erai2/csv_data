@@ -1,38 +1,66 @@
-# db.py
 import sqlite3
+import pandas as pd
 
-DB_PATH = "saju.db"
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
+def init_db(db_path="suri.db"):
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+
     cur.execute("""
     CREATE TABLE IF NOT EXISTS rules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        category TEXT,
-        title TEXT,
-        content TEXT,
-        source_file TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        rule_id TEXT,
+        condition_text TEXT,
+        result_text TEXT,
+        relation_type TEXT,
+        ohaeng TEXT,
+        source TEXT,
+        created_at TEXT,
+        UNIQUE(condition_text, result_text, source)
     )
     """)
-    conn.commit()
-    conn.close()
 
-def insert_rule(category, title, content, source_file):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
     cur.execute("""
-    INSERT INTO rules (category, title, content, source_file)
-    VALUES (?, ?, ?, ?)
-    """, (category, title, content, source_file))
+    CREATE TABLE IF NOT EXISTS concepts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        concept_id TEXT,
+        name TEXT,
+        definition TEXT,
+        example TEXT,
+        related_rules TEXT,
+        source TEXT,
+        created_at TEXT,
+        UNIQUE(name, definition, source)
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS cases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_id TEXT,
+        saju_text TEXT,
+        relations_found TEXT,
+        interpretation TEXT,
+        source TEXT,
+        created_at TEXT,
+        UNIQUE(saju_text, interpretation, source)
+    )
+    """)
+
     conn.commit()
     conn.close()
 
-def fetch_rules(limit=10):
-    conn = sqlite3.connect(DB_PATH)
+def insert_data(db_path, table, data: dict):
+    conn = sqlite3.connect(db_path)
     cur = conn.cursor()
-    cur.execute("SELECT * FROM rules ORDER BY created_at DESC LIMIT ?", (limit,))
-    rows = cur.fetchall()
+    cols = ",".join(data.keys())
+    placeholders = ",".join(["?"]*len(data))
+    sql = f"INSERT OR IGNORE INTO {table} ({cols}) VALUES ({placeholders})"
+    cur.execute(sql, list(data.values()))
+    conn.commit()
     conn.close()
-    return rows
+
+def fetch_table(db_path="saju.db", table="rules"):
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql_query(f"SELECT * FROM {table} ORDER BY created_at DESC", conn)
+    conn.close()
+    return df

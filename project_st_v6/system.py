@@ -1,105 +1,104 @@
-# saju_system.py
-import json
-from collections import defaultdict
+# system.py
 
-# === (1) 기본 데이터 ===
-HEAVENLY_STEMS = {
-    '甲': {'ohaeng': '목', 'yinyang': '양'}, '乙': {'ohaeng': '목', 'yinyang': '음'},
-    '丙': {'ohaeng': '화', 'yinyang': '양'}, '丁': {'ohaeng': '화', 'yinyang': '음'},
-    '戊': {'ohaeng': '토', 'yinyang': '양'}, '己': {'ohaeng': '토', 'yinyang': '음'},
-    '庚': {'ohaeng': '금', 'yinyang': '양'}, '辛': {'ohaeng': '금', 'yinyang': '음'},
-    '壬': {'ohaeng': '수', 'yinyang': '양'}, '癸': {'ohaeng': '수', 'yinyang': '음'},
-}
-EARTHLY_BRANCHES = {
-    '子': {'ohaeng': '수', 'yinyang': '양'},
-    '丑': {'ohaeng': '토', 'yinyang': '음'},
-    '寅': {'ohaeng': '목', 'yinyang': '양'},
-    '卯': {'ohaeng': '목', 'yinyang': '음'},
-    '辰': {'ohaeng': '토', 'yinyang': '양'},
-    '巳': {'ohaeng': '화', 'yinyang': '음'},
-    '午': {'ohaeng': '화', 'yinyang': '양'},
-    '未': {'ohaeng': '토', 'yinyang': '음'},
-    '申': {'ohaeng': '금', 'yinyang': '양'},
-    '酉': {'ohaeng': '금', 'yinyang': '음'},
-    '戌': {'ohaeng': '토', 'yinyang': '양'},
-    '亥': {'ohaeng': '수', 'yinyang': '음'},
+# --- 지장간 정의 ---
+HIDDEN = {
+    '子': ['癸'],
+    '丑': ['己','癸','辛'],
+    '寅': ['甲','丙','戊'],
+    '卯': ['乙'],
+    '辰': ['戊','乙','癸'],
+    '巳': ['丙','戊','庚'],
+    '午': ['丁','己'],
+    '未': ['己','乙','丁'],
+    '申': ['庚','壬','戊'],
+    '酉': ['辛'],
+    '戌': ['戊','辛','丁'],
+    '亥': ['壬','甲'],
 }
 
-# === (2) 클래스 정의 ===
-class HeavenlyStem:
-    def __init__(self, name):
-        self.name = name
-        self.ohaeng = HEAVENLY_STEMS[name]["ohaeng"]
-        self.yinyang = HEAVENLY_STEMS[name]["yinyang"]
-    def __repr__(self):
-        return f"천간({self.name})"
+# --- 천간 5합 ---
+TG_HE = [
+    ('甲','己','土'),
+    ('乙','庚','金'),
+    ('丙','辛','水'),
+    ('丁','壬','木'),
+    ('戊','癸','火'),
+]
 
-class EarthlyBranch:
-    def __init__(self, name):
-        self.name = name
-        self.ohaeng = EARTHLY_BRANCHES[name]["ohaeng"]
-        self.yinyang = EARTHLY_BRANCHES[name]["yinyang"]
-    def __repr__(self):
-        return f"지지({self.name})"
+BRANCH_REL = {
+    "충": [('子','午'),('丑','未'),('寅','申'),('卯','酉'),('辰','戌'),('巳','亥')],
+    "형": [('寅','巳'),('丑','戌'),('戌','未')],
+    "파": [('子','卯'),('午','卯'),('午','酉')],
+    "천": [('寅','巳'),('申','亥'),('午','丑'),('子','未')],
+}
 
-class Pillar:
-    def __init__(self, stem, branch):
-        self.stem = HeavenlyStem(stem)
-        self.branch = EarthlyBranch(branch)
-    def __repr__(self):
-        return f"{self.stem.name}{self.branch.name}주"
+SAMHAP = [
+    (['申','子','辰'], "水局"),
+    (['寅','午','戌'], "火局"),
+    (['巳','酉','丑'], "金局"),
+    (['亥','卯','未'], "木局"),
+]
 
-class Saju:
-    def __init__(self, year, month, day, time):
-        self.year = year
-        self.month = month
-        self.day = day
-        self.time = time
-    def get_pillars(self):
-        return [self.year, self.month, self.day, self.time]
-    def __repr__(self):
-        return f"사주: {self.year}, {self.month}, {self.day}, {self.time}"
+YUKHAP = {
+    ('子','丑'):"水合", ('寅','亥'):"木合", ('卯','戌'):"火合",
+    ('辰','酉'):"金合", ('巳','申'):"水合", ('午','未'):"土合"
+}
 
-# === (3) Analyzer ===
+def _has_tg_he(a_hiddens, b_hiddens):
+    hits = []
+    for x,y,res in TG_HE:
+        if (x in a_hiddens and y in b_hiddens) or (y in a_hiddens and x in b_hiddens):
+            hits.append((x+y, res))
+    return hits
+
 class SajuAnalyzer:
-    def __init__(self, saju=None, parsed_data_path="parsed_all.json"):
-        self.saju = saju
-        self.parsed_data_path = parsed_data_path
-        self.parsed_data = self._load_parsed_data()
+    def __init__(self, saju_input: str):
+        self.saju = saju_input.split()
+        self.branches = [p[1] for p in self.saju if len(p)==2]
 
-    def _load_parsed_data(self):
-        try:
-            with open(self.parsed_data_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except FileNotFoundError:
-            return {}
+    def check_relations(self):
+        results = []
+        for t, pairs in BRANCH_REL.items():
+            for a,b in pairs:
+                if a in self.branches and b in self.branches:
+                    results.append(f"{a}{t}{b}")
+        return results
 
-    def analyze_gungwi(self):
-        if not self.saju:
-            return "⚠️ 사주 데이터 없음"
-        lines = ["--- 궁위 분석 ---"]
-        for p in self.saju.get_pillars():
-            lines.append(str(p))
-        return "\n".join(lines)
+    def check_samhap(self):
+        results = []
+        for group, label in SAMHAP:
+            cnt = sum([1 for g in group if g in self.branches])
+            if cnt == 3:
+                results.append(f"삼합 {label} 완성 ({''.join(group)})")
+            elif cnt == 2:
+                results.append(f"삼합 {label} 부분 성립 ({''.join(group)})")
+        return results
 
-    def summarize_by_category(self):
-        cats = defaultdict(list)
-        for fname, doc in self.parsed_data.items():
-            for para in doc.get("rules", []):
-                cats[para["category"]].append(para["content"])
+    def check_yukhap(self):
+        results = []
+        for (a,b),label in YUKHAP.items():
+            if a in self.branches and b in self.branches:
+                results.append(f"육합 {a}{b} = {label}")
+        return results
 
-        lines = ["--- 규칙별 요약 ---"]
-        for cat, items in cats.items():
-            lines.append(f"\n[{cat}] ({len(items)}개)")
-            for i, txt in enumerate(items[:5], 1):  # 최대 5개 미리보기
-                lines.append(f"{i}. {txt}")
-        return "\n".join(lines)
+    def check_am_hap(self, mode='loose'):
+        results = []
+        brs = list(dict.fromkeys([b for b in self.branches if b in HIDDEN]))
+        for i in range(len(brs)):
+            for j in range(i+1, len(brs)):
+                a, b = brs[i], brs[j]
+                a_h = [HIDDEN[a][0]] if mode=='strict' else HIDDEN[a]
+                b_h = [HIDDEN[b][0]] if mode=='strict' else HIDDEN[b]
+                hits = _has_tg_he(a_h, b_h)
+                for pair,res in hits:
+                    results.append(f"암합 {a}+{b}: 지장간 {pair} → {res}合")
+        return results
 
-    def build_report(self):
-        report = []
-        report.append("=== 사주 분석 리포트 ===")
-        if self.saju:
-            report.append(f"\n[사주 구조]\n{self.saju}")
-        report.append("\n" + self.analyze_gungwi())
-        report.append("\n" + self.summarize_by_category())
-        return "\n".join(report)
+    def analyze(self):
+        result = {"입력": self.saju}
+        result["합충형파천"] = self.check_relations()
+        result["삼합"] = self.check_samhap()
+        result["육합"] = self.check_yukhap()
+        result["암합"] = self.check_am_hap()
+        result["총평"] = "구조 분석 (합/충/형/파/천/삼합/육합/암합 포함)"
+        return result
