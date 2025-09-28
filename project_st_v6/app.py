@@ -8,7 +8,7 @@ from system import Saju, Pillar, HeavenlyStem, EarthlyBranch, SajuAnalyzer
 DB_PATH = "saju.db"
 init_db()
 
-st.title("📂 사주 문서 분석 시스템")
+st.title("📂 분석 시스템")
 
 # --- 1. 문서 업로드 ---
 uploaded_file = st.file_uploader("문서를 업로드하세요", type=["txt", "md", "csv"])
