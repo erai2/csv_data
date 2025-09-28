@@ -2,32 +2,38 @@ import re
 from datetime import datetime
 
 def parse_content(text: str, source="uploaded_doc"):
-    """
-    문서 내용을 concepts / rules / cases 로 정밀 분류
-    """
     lines = text.splitlines()
     data = {"concepts": [], "rules": [], "cases": []}
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for line in lines:
         line = line.strip()
-        if not line:
+        if not line: 
             continue
 
+        # 개념 (용어 정의)
+        if any(kw in line for kw in ["궁위", "십신", "대상", "묘고", "록", "역마", "공망", "겁살"]):
+            data["concepts"].append({
+                "concept_id": f"C{len(data['concepts'])+1:03}",
+                "name": line.split()[0],
+                "definition": line,
+                "example": "",
+                "related_rules": "",
+                "source": source,
+                "created_at": now
+            })
+
         # 규칙 (조건 → 결과)
-        if "→" in line:
-            parts = line.split("→")
+        elif "→" in line or any(kw in line for kw in ["허투","합","충","형","파","입묘","제압","格"]):
+            parts = re.split(r"→|=", line)
             condition = parts[0].strip()
             result = parts[1].strip() if len(parts) > 1 else ""
-            relation_type = "합" if "合" in result or "合" in condition else \
-                            "충" if "沖" in result else "기타"
-            ohaeng = re.findall(r"[金木水火土]", result)
             data["rules"].append({
                 "rule_id": f"R{len(data['rules'])+1:03}",
                 "condition_text": condition,
                 "result_text": result,
-                "relation_type": relation_type,
-                "ohaeng": ohaeng[0] if ohaeng else "",
+                "relation_type": "규칙",
+                "ohaeng": "".join(re.findall(r"[金木水火土]", line)),
                 "source": source,
                 "created_at": now
             })
@@ -39,18 +45,6 @@ def parse_content(text: str, source="uploaded_doc"):
                 "saju_text": line,
                 "relations_found": "",
                 "interpretation": "",
-                "source": source,
-                "created_at": now
-            })
-
-        # 개념
-        elif "개념" in line or "이론" in line or line.startswith("Part"):
-            data["concepts"].append({
-                "concept_id": f"C{len(data['concepts'])+1:03}",
-                "name": line[:30],
-                "definition": line,
-                "example": "",
-                "related_rules": "",
                 "source": source,
                 "created_at": now
             })
