@@ -4,11 +4,11 @@ from parser import parse_content
 from converter import save_to_csv_and_db
 from db import init_db, fetch_table
 
-DB_PATH = "saju.db"
+DB_PATH = "suri.db"
 init_db(DB_PATH)
 
-st.set_page_config(page_title="수암명리 분석 시스템", layout="wide")
-st.title("📂 수암명리 문서 → DB/CSV 저장 & 분석")
+st.set_page_config(page_title="분석 시스템", layout="wide")
+st.title("📂 문서 → DB/CSV 저장 & 분석")
 
 # --- 탭 구성 ---
 tab1, tab2 = st.tabs(["📑 문서 업로드", "📊 DB 조회"])
@@ -64,3 +64,4 @@ with tab2:
             )
     else:
         st.info("아직 DB에 저장된 데이터가 없습니다.")
+
