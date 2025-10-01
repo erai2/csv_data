@@ -11,6 +11,10 @@
 *.db
 *.sqlite
 *.sqlite3
+project_st_v6/parsed/
+project_st_v6/reports/
+project_st_v6/__pycache__/
+project_st_v6/parsed_all.json
 
 # Application data directories
 gemeni_csv/data/
