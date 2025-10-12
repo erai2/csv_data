@@ -11,6 +11,7 @@
 *.db
 *.sqlite
 *.sqlite3
+data/uploads/
 
 # Application data directories
 gemeni_csv/data/

@@ -1,158 +1,156 @@
+import os
+import sqlite3
+
 import streamlit as st
-import pandas as pd
 
-# -------------------------------
-# ⚙️ 계산 함수 정의
-# -------------------------------
-def calc_kongmang(day_pillar):
-    table = {
-        "戊辰": "寅卯", "己巳": "子丑", "庚午": "戌亥", "辛未": "申酉",
-        "壬申": "午未", "癸酉": "辰巳", "甲戌": "寅卯", "乙亥": "子丑"
-    }
-    return table.get(day_pillar, "해당 없음")
+from utils.db_manager import (
+    fetch_inferences,
+    fetch_rules,
+    fetch_terms,
+    init_db,
+    insert_chart,
+    insert_inference,
+    insert_rule,
+    insert_term,
+)
+from utils.extractor_v2 import extract_rules_and_terms
+from utils.interpreter_v2 import analyze_chart
+from utils.logic_engine import infer_logic
+from utils.visualize import draw_chart_relations
 
-def calc_jeap(relations):
-    if "沖" in relations or "破" in relations:
-        return "충파제압"
-    elif "合" in relations:
-        return "합화제압"
-    elif "刑" in relations:
-        return "형극제압"
-    else:
-        return "일반제압"
+st.set_page_config(page_title="명리 자동 해석 시스템", layout="wide")
 
-def calc_daeun(stem, branch):
-    stems = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"]
-    branches = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
-    i, j = stems.index(stem), branches.index(branch)
-    daeun = [f"{stems[(i+k)%10]}{branches[(j+k)%12]}" for k in range(8)]
-    return " → ".join(daeun)
+DB_PATH = os.path.join("data", "suri_analysis.db")
+init_db(DB_PATH)
 
-def interpret_category(category, gender, pillar_day):
-    # 간단한 자동 해석 구조 예시
-    if category == "혼인":
-        if "午" in pillar_day or "卯" in pillar_day:
-            return "夫星이 夫宮에 들어 혼인 성립, 午卯破 시 이혼 가능성"
-        else:
-            return "夫宮 안정, 현실혼 가능"
-    elif category == "직업":
-        if "辛" in pillar_day or "巳" in pillar_day:
-            return "食神生財格, 문화·언론계 직업 유리"
-        else:
-            return "官印相生格, 행정·교육계 적합"
-    elif category == "재물":
-        if "財" in pillar_day or "巳" in pillar_day:
-            return "財庫開, 발재운"
-        else:
-            return "재성 약, 절약형"
-    elif category == "건강":
-        if "水" in pillar_day or "酉" in pillar_day:
-            return "신장·혈압 유의"
-        else:
-            return "체력 안정"
-    elif category == "육친":
-        return "부모: 印, 배우자: 官, 자녀: 食傷 중심으로 안정"
-    return "분석 데이터 없음"
+st.title("📘 명리 자동 해석 시스템 v10.5")
+
+# Tab order: 3-4-2-1-5 (document upload, rule search, glossary, interpretation, visualization)
+tabs = st.tabs(
+    [
+        "📄 문서 업로드",
+        "🔍 조건·규칙 검색",
+        "📘 용어 사전",
+        "🪶 명조 해석",
+        "🌐 명조 구조 시각화",
+    ]
+)
 
 
-# -------------------------------
-# 🧭 Streamlit UI 시작
-# -------------------------------
-st.set_page_config(page_title="자동 해석 시스템 v4", layout="wide")
-st.title("🔮 v4")
-
-tabs = st.tabs(["🧭 기본 구조", "💍 혼인 분석", "💼 직업·재물", "🧠 건강·육친"])
-
-# -------------------------------
-# 🧭 ① 기본 구조 탭
-# -------------------------------
+# ------------------------------------------------------------
+# 3️⃣ 문서 업로드
+# ------------------------------------------------------------
 with tabs[0]:
-    st.subheader("📘 사주 구성 (천간/지지 2행 구조)")
+    st.header("📄 문서 업로드 및 자동 추출")
+    uploaded_file = st.file_uploader(
+        "문서를 업로드하세요", type=["txt", "docx", "pdf", "zip"]
+    )
+    if uploaded_file:
+        upload_dir = os.path.join("data", "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, uploaded_file.name)
+        with open(save_path, "wb") as f:
+            f.write(uploaded_file.read())
 
-    col1, col2 = st.columns(2)
-    with col1:
-        gender = st.radio("성별", ["乾(남)", "坤(여)"])
-        saju = st.text_input("사주 8자 입력 (예: 戊辰 辛酉 己巳 乙丑)", "戊辰 辛酉 己巳 乙丑")
-    with col2:
-        relation = st.text_input("주요 관계 (합·충·형·파)", "巳酉丑, 午卯破")
+        extracted = extract_rules_and_terms(save_path)
+        st.success(
+            f"{len(extracted['rules'])}개 규칙, {len(extracted['terms'])}개 용어 추출 완료!"
+        )
 
-    if st.button("🔍 분석 실행", key="main_analysis"):
-        pillars = saju.split()
-        if len(pillars) != 4:
-            st.error("사주 4기둥(8자)을 올바르게 입력하세요.")
-            st.stop()
+        conn = sqlite3.connect(DB_PATH)
+        for rule in extracted["rules"]:
+            insert_rule(conn, rule)
+        for term in extracted["terms"]:
+            insert_term(conn, term)
+        conn.close()
 
-        pillars = pillars[::-1]  # 時-日-月-年 순
-        stems = [p[0] for p in pillars]
-        branches = [p[1] for p in pillars]
+        st.json(extracted)
 
-        kongmang = calc_kongmang(pillars[1])
-        jeap = calc_jeap(relation)
-        daeun = calc_daeun(pillars[1][0], pillars[1][1])
 
-        df1 = pd.DataFrame({
-            "구분": ["天干", "地支"],
-            "時柱": [stems[0], branches[0]],
-            "日柱": [stems[1], branches[1]],
-            "月柱": [stems[2], branches[2]],
-            "年柱": [stems[3], branches[3]]
-        })
-
-        summary = pd.DataFrame([
-            ["성별", gender],
-            ["공망", kongmang],
-            ["제압수단", jeap],
-            ["대운", daeun],
-            ["운세 해석", "財統官格 / 食神生財格 / 안정된 혼인"]
-        ], columns=["항목", "내용"])
-
-        st.table(df1)
-        st.table(summary)
-
-# -------------------------------
-# 💍 ② 혼인 분석 탭
-# -------------------------------
+# ------------------------------------------------------------
+# 4️⃣ 조건·규칙 검색
+# ------------------------------------------------------------
 with tabs[1]:
-    st.subheader("💍 혼인/배우자 해석")
-    saju = st.text_input("사주 입력 (예: 戊辰 辛酉 己巳 乙丑)", key="marriage")
-    if st.button("혼인 해석", key="marriage_btn"):
-        if saju:
-            result = interpret_category("혼인", "坤", saju)
-            st.success(f"🔹 해석 결과: {result}")
-        else:
-            st.warning("사주를 입력하세요.")
+    st.header("🔍 조건·규칙 검색")
+    keyword = st.text_input("검색어 입력 (예: 午卯破, 合留, 官印相生格)")
+    if st.button("검색"):
+        results = fetch_rules(DB_PATH, keyword)
+        st.write(f"검색 결과 {len(results)}건")
+        for rule in results:
+            st.markdown(f"**[{rule['category']}]** {rule['condition']} → {rule['result']}")
+            if rule.get("description"):
+                st.caption(rule["description"])
+            if rule.get("source"):
+                st.caption(f"출처: {rule['source']}")
 
-# -------------------------------
-# 💼 ③ 직업/재물 탭
-# -------------------------------
+
+# ------------------------------------------------------------
+# 2️⃣ 용어 사전
+# ------------------------------------------------------------
 with tabs[2]:
-    st.subheader("💼 직업 및 재물 해석")
-    saju = st.text_input("사주 입력", key="career")
-    if st.button("직업 해석", key="career_btn"):
-        job = interpret_category("직업", "乾", saju)
-        money = interpret_category("재물", "乾", saju)
-        st.info(f"💼 직업: {job}")
-        st.success(f"💰 재물: {money}")
+    st.header("📘 용어 사전")
+    term_keyword = st.text_input("용어 검색 (예: 比劫, 財破, 庫開)")
+    if st.button("용어 검색"):
+        terms = fetch_terms(DB_PATH, term_keyword)
+        if not terms:
+            st.warning("결과 없음")
+        for term in terms:
+            st.markdown(f"### {term['term']}")
+            st.write(term["definition"])
+            st.caption(f"분류: {term['category']}")
 
-# -------------------------------
-# 🧠 ④ 건강/육친 탭
-# -------------------------------
+
+# ------------------------------------------------------------
+# 1️⃣ 명조 해석
+# ------------------------------------------------------------
 with tabs[3]:
-    st.subheader("🧠 건강 및 육친 해석")
-    saju = st.text_input("사주 입력", key="health")
-    if st.button("건강/육친 해석", key="health_btn"):
-        health = interpret_category("건강", "乾", saju)
-        family = interpret_category("육친", "乾", saju)
-        st.info(f"🧘 건강: {health}")
-        st.success(f"👨‍👩‍👧 육친: {family}")
+    st.header("🪶 명조 해석")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        name = st.text_input("이름", "")
+        gender = st.selectbox("성별", ["坤(여)", "乾(남)"])
+    with col2:
+        gan = st.text_input("천간 (시 일 월 년)", "丁 戊 辛 辛")
+    with col3:
+        zhi = st.text_input("지지 (시 일 월 년)", "午 卯 亥 ⺒")
 
-# -------------------------------
-# 🪶 푸터
-# -------------------------------
-st.markdown("""
----
-** 자동 해석 시스템 v4**
-- 구조 해석: 合/沖/刑/破/穿/入墓 기반  
-- 운세 해석: 財統官格 / 官印相生格 / 食神生財格  
-- Version 4 © Suri Platform
-""")
+    if st.button("해석 실행"):
+        chart = analyze_chart(gan, zhi)
+        st.subheader("🌿 구조 분석 결과")
+        st.json(chart)
+
+        st.subheader("🧠 자동 해석 결과")
+        inferred = infer_logic(chart)
+        st.table(inferred)
+
+        insert_chart(DB_PATH, name, gender, gan, zhi, chart)
+        insert_inference(DB_PATH, name, inferred)
+        st.success("DB 저장 완료!")
+
+        if name:
+            history = fetch_inferences(DB_PATH, name)
+            if history:
+                st.subheader("🗂️ 과거 해석 기록")
+                for record in history:
+                    st.markdown(
+                        f"- {record['chart_name']} (ID: {record['id']})"
+                    )
+
+
+# ------------------------------------------------------------
+# 5️⃣ 명조 구조 시각화
+# ------------------------------------------------------------
+with tabs[4]:
+    st.header("🌐 명조 구조 시각화 (합·충·형·파·묘)")
+    chart_name = st.text_input("시각화할 명조 이름 입력")
+    if st.button("시각화 실행"):
+        relations = [
+            ("午", "卯", "破"),
+            ("卯", "亥", "合"),
+            ("戌", "辰", "沖"),
+        ]
+        html_path = draw_chart_relations(chart_name or "chart", relations)
+        with open(html_path, "r", encoding="utf-8") as f:
+            st.components.v1.html(f.read(), height=600, scrolling=True)
+
+        st.success("시각화 완료!")
