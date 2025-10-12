@@ -1,158 +1,182 @@
+import os
+import sqlite3
+
 import streamlit as st
-import pandas as pd
 
-# -------------------------------
-# ⚙️ 계산 함수 정의
-# -------------------------------
-def calc_kongmang(day_pillar):
-    table = {
-        "戊辰": "寅卯", "己巳": "子丑", "庚午": "戌亥", "辛未": "申酉",
-        "壬申": "午未", "癸酉": "辰巳", "甲戌": "寅卯", "乙亥": "子丑"
-    }
-    return table.get(day_pillar, "해당 없음")
+from utils.db_manager_v2 import (
+    delete_case,
+    fetch_cases,
+    fetch_rules,
+    fetch_terms,
+    init_db,
+    insert_case,
+    insert_rule,
+    insert_term,
+)
+from utils.extractor_v4 import extract_rules_terms_cases
+from utils.visualize import draw_chart_relations
 
-def calc_jeap(relations):
-    if "沖" in relations or "破" in relations:
-        return "충파제압"
-    elif "合" in relations:
-        return "합화제압"
-    elif "刑" in relations:
-        return "형극제압"
+DB_PATH = os.path.join("data", "suri_analysis.db")
+init_db(DB_PATH)
+
+st.set_page_config(page_title="명리 자동 해석 시스템 v10.8", layout="wide")
+st.title("📘 명리 자동 해석 시스템 v10.8")
+
+TABS = st.tabs(
+    [
+        "📄 문서 업로드 (자동 정리)",
+        "📂 사례 보기/삭제",
+        "📘 용어 정리",
+        "🔍 규칙 보기",
+        "🌐 시각화",
+    ]
+)
+
+
+# ------------------------------------------------------------
+# 📄 1. 문서 업로드
+# ------------------------------------------------------------
+with TABS[0]:
+    st.header("📄 문서 업로드 및 자동 구조화")
+    uploaded = st.file_uploader(
+        "문서를 업로드하세요", type=["txt", "docx", "pdf", "zip"]
+    )
+    if uploaded is not None:
+        upload_dir = os.path.join("data", "uploads")
+        os.makedirs(upload_dir, exist_ok=True)
+        save_path = os.path.join(upload_dir, uploaded.name)
+        with open(save_path, "wb") as f:
+            f.write(uploaded.read())
+
+        extracted = extract_rules_terms_cases(save_path)
+
+        st.success(
+            "✅ {case_count}개 사례 / {rule_count}개 규칙 / {term_count}개 용어 자동 추출".format(
+                case_count=len(extracted.get("cases", [])),
+                rule_count=len(extracted.get("rules", [])),
+                term_count=len(extracted.get("terms", [])),
+            )
+        )
+
+        with st.expander("🧩 규칙 요약", expanded=True):
+            rules_data = extracted.get("rules", [])
+            if rules_data:
+                st.dataframe(rules_data)
+            else:
+                st.info("추출된 규칙이 없습니다.")
+
+        with st.expander("📘 용어 정리", expanded=False):
+            terms_data = extracted.get("terms", [])
+            if terms_data:
+                st.dataframe(terms_data)
+            else:
+                st.info("추출된 용어가 없습니다.")
+
+        with st.expander("📂 사례 목록", expanded=True):
+            cases_data = extracted.get("cases", [])
+            if not cases_data:
+                st.info("추출된 사례가 없습니다.")
+            for case_index, case in enumerate(cases_data):
+                with st.expander(f"📁 {case.get('title', '사례')}", expanded=False):
+                    st.markdown(f"**명조:** {case.get('chart', '-')}")
+                    st.markdown(f"**요약:** {case.get('summary', '요약 없음')}")
+                    st.text_area(
+                        "본문",
+                        case.get("content", ""),
+                        height=250,
+                        key=f"case_content_{case_index}",
+                    )
+                    tags = case.get("tags", [])
+                    if isinstance(tags, (list, tuple)):
+                        tag_label = ", ".join(tags)
+                    else:
+                        tag_label = str(tags)
+                    st.caption(f"자동 태그: {tag_label if tag_label else '없음'}")
+
+        conn = sqlite3.connect(DB_PATH)
+        try:
+            for rule in extracted.get("rules", []):
+                insert_rule(conn, rule)
+            for term in extracted.get("terms", []):
+                insert_term(conn, term)
+            for case in extracted.get("cases", []):
+                insert_case(conn, case)
+        finally:
+            conn.close()
+
+
+# ------------------------------------------------------------
+# 📂 2. 사례 보기 / 삭제 / 검색 / 필터
+# ------------------------------------------------------------
+with TABS[1]:
+    st.header("📂 사례 관리")
+    keyword = st.text_input("검색 (제목·요약·태그)", "")
+    tag_filter = st.selectbox(
+        "카테고리 필터",
+        ["전체", "혼인", "직업", "재물", "건강", "기타"],
+        index=0,
+    )
+
+    cases = fetch_cases(DB_PATH, keyword=keyword, tag_filter=tag_filter)
+
+    if not cases:
+        st.info("표시할 사례가 없습니다.")
     else:
-        return "일반제압"
-
-def calc_daeun(stem, branch):
-    stems = ["甲","乙","丙","丁","戊","己","庚","辛","壬","癸"]
-    branches = ["子","丑","寅","卯","辰","巳","午","未","申","酉","戌","亥"]
-    i, j = stems.index(stem), branches.index(branch)
-    daeun = [f"{stems[(i+k)%10]}{branches[(j+k)%12]}" for k in range(8)]
-    return " → ".join(daeun)
-
-def interpret_category(category, gender, pillar_day):
-    # 간단한 자동 해석 구조 예시
-    if category == "혼인":
-        if "午" in pillar_day or "卯" in pillar_day:
-            return "夫星이 夫宮에 들어 혼인 성립, 午卯破 시 이혼 가능성"
-        else:
-            return "夫宮 안정, 현실혼 가능"
-    elif category == "직업":
-        if "辛" in pillar_day or "巳" in pillar_day:
-            return "食神生財格, 문화·언론계 직업 유리"
-        else:
-            return "官印相生格, 행정·교육계 적합"
-    elif category == "재물":
-        if "財" in pillar_day or "巳" in pillar_day:
-            return "財庫開, 발재운"
-        else:
-            return "재성 약, 절약형"
-    elif category == "건강":
-        if "水" in pillar_day or "酉" in pillar_day:
-            return "신장·혈압 유의"
-        else:
-            return "체력 안정"
-    elif category == "육친":
-        return "부모: 印, 배우자: 官, 자녀: 食傷 중심으로 안정"
-    return "분석 데이터 없음"
+        for case in cases:
+            tag_text = case.get("tags", "") or "-"
+            expander_label = f"📁 {case.get('title', '사례')} ({tag_text})"
+            with st.expander(expander_label, expanded=False):
+                st.markdown(f"**명조:** {case.get('chart', '-')}")
+                st.markdown(f"**요약:** {case.get('summary', '요약 없음')}")
+                st.text_area(
+                    "본문",
+                    case.get("content", ""),
+                    height=250,
+                    key=f"case_view_{case['id']}",
+                )
+                delete_col, _ = st.columns([1, 4])
+                with delete_col:
+                    if st.button(
+                        f"🗑 삭제 {case['id']}", key=f"delete_case_{case['id']}"
+                    ):
+                        delete_case(DB_PATH, case["id"])
+                        st.warning(f"{case.get('title', '사례')} 삭제됨")
+                        st.experimental_rerun()
 
 
-# -------------------------------
-# 🧭 Streamlit UI 시작
-# -------------------------------
-st.set_page_config(page_title="자동 해석 시스템 v4", layout="wide")
-st.title("🔮 v4")
+# ------------------------------------------------------------
+# 📘 3. 용어 정리
+# ------------------------------------------------------------
+with TABS[2]:
+    st.header("📘 용어 정리")
+    terms = fetch_terms(DB_PATH)
+    if terms:
+        st.dataframe(terms)
+    else:
+        st.info("등록된 용어가 없습니다.")
 
-tabs = st.tabs(["🧭 기본 구조", "💍 혼인 분석", "💼 직업·재물", "🧠 건강·육친"])
 
-# -------------------------------
-# 🧭 ① 기본 구조 탭
-# -------------------------------
-with tabs[0]:
-    st.subheader("📘 사주 구성 (천간/지지 2행 구조)")
+# ------------------------------------------------------------
+# 🔍 4. 규칙 보기
+# ------------------------------------------------------------
+with TABS[3]:
+    st.header("🔍 규칙 보기")
+    rules = fetch_rules(DB_PATH)
+    if rules:
+        st.dataframe(rules)
+    else:
+        st.info("등록된 규칙이 없습니다.")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        gender = st.radio("성별", ["乾(남)", "坤(여)"])
-        saju = st.text_input("사주 8자 입력 (예: 戊辰 辛酉 己巳 乙丑)", "戊辰 辛酉 己巳 乙丑")
-    with col2:
-        relation = st.text_input("주요 관계 (합·충·형·파)", "巳酉丑, 午卯破")
 
-    if st.button("🔍 분석 실행", key="main_analysis"):
-        pillars = saju.split()
-        if len(pillars) != 4:
-            st.error("사주 4기둥(8자)을 올바르게 입력하세요.")
-            st.stop()
+# ------------------------------------------------------------
+# 🌐 5. 시각화
+# ------------------------------------------------------------
+with TABS[4]:
+    st.header("🌐 명조 구조 시각화")
+    chart_name = st.text_input("시각화할 명조 이름")
+    if st.button("시각화 실행"):
+        relations = [("午", "卯", "破"), ("卯", "亥", "合")]
+        html_path = draw_chart_relations(chart_name or "chart", relations)
+        with open(html_path, "r", encoding="utf-8") as html_file:
+            st.components.v1.html(html_file.read(), height=600, scrolling=True)
 
-        pillars = pillars[::-1]  # 時-日-月-年 순
-        stems = [p[0] for p in pillars]
-        branches = [p[1] for p in pillars]
-
-        kongmang = calc_kongmang(pillars[1])
-        jeap = calc_jeap(relation)
-        daeun = calc_daeun(pillars[1][0], pillars[1][1])
-
-        df1 = pd.DataFrame({
-            "구분": ["天干", "地支"],
-            "時柱": [stems[0], branches[0]],
-            "日柱": [stems[1], branches[1]],
-            "月柱": [stems[2], branches[2]],
-            "年柱": [stems[3], branches[3]]
-        })
-
-        summary = pd.DataFrame([
-            ["성별", gender],
-            ["공망", kongmang],
-            ["제압수단", jeap],
-            ["대운", daeun],
-            ["운세 해석", "財統官格 / 食神生財格 / 안정된 혼인"]
-        ], columns=["항목", "내용"])
-
-        st.table(df1)
-        st.table(summary)
-
-# -------------------------------
-# 💍 ② 혼인 분석 탭
-# -------------------------------
-with tabs[1]:
-    st.subheader("💍 혼인/배우자 해석")
-    saju = st.text_input("사주 입력 (예: 戊辰 辛酉 己巳 乙丑)", key="marriage")
-    if st.button("혼인 해석", key="marriage_btn"):
-        if saju:
-            result = interpret_category("혼인", "坤", saju)
-            st.success(f"🔹 해석 결과: {result}")
-        else:
-            st.warning("사주를 입력하세요.")
-
-# -------------------------------
-# 💼 ③ 직업/재물 탭
-# -------------------------------
-with tabs[2]:
-    st.subheader("💼 직업 및 재물 해석")
-    saju = st.text_input("사주 입력", key="career")
-    if st.button("직업 해석", key="career_btn"):
-        job = interpret_category("직업", "乾", saju)
-        money = interpret_category("재물", "乾", saju)
-        st.info(f"💼 직업: {job}")
-        st.success(f"💰 재물: {money}")
-
-# -------------------------------
-# 🧠 ④ 건강/육친 탭
-# -------------------------------
-with tabs[3]:
-    st.subheader("🧠 건강 및 육친 해석")
-    saju = st.text_input("사주 입력", key="health")
-    if st.button("건강/육친 해석", key="health_btn"):
-        health = interpret_category("건강", "乾", saju)
-        family = interpret_category("육친", "乾", saju)
-        st.info(f"🧘 건강: {health}")
-        st.success(f"👨‍👩‍👧 육친: {family}")
-
-# -------------------------------
-# 🪶 푸터
-# -------------------------------
-st.markdown("""
----
-** 자동 해석 시스템 v4**
-- 구조 해석: 合/沖/刑/破/穿/入墓 기반  
-- 운세 해석: 財統官格 / 官印相生格 / 食神生財格  
-- Version 4 © Suri Platform
-""")
