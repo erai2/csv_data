@@ -29,6 +29,12 @@ python suri_db_system/scripts/db_insert.py
 
 3. `suri_db_system/db/suri_manual.db` 파일이 생성되고 예시 데이터가 적재됩니다. 해당 파일은 `.gitignore`에 의해 버전 관리에서 제외됩니다.
 
+## Streamlit 앱 연동
+
+- 루트의 `app.py`는 동일한 `suri_db_system/db/suri_manual.db` 파일을 직접 사용합니다.
+- 앱을 처음 실행하면 DB가 자동으로 초기화되며, 테이블이 비어 있는 경우 이 디렉터리의 예시 JSON 데이터로 채워집니다.
+- Streamlit UI에서는 사례 상세 화면에서 연결된 규칙/용어까지 함께 확인할 수 있습니다.
+
 ## 데이터 연계 방식
 
 - `rules`, `terms`, `cases` 테이블은 각각 규칙, 용어, 사례 정보를 보관합니다.
