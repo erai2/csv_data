@@ -161,7 +161,7 @@ def _structure_relations_to_edges(relations: Sequence[str]) -> List[Tuple[str, s
 tabs = st.tabs(
     [
         "📄 문서 정리/시각화",
-        "🪶 사주 명조 및 운세 해석",
+        "🪶 명조 및 해석",
         "👤 프로필 관리",
         "🌐 시각화",
         "📘 리포트",
