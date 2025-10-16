@@ -12,6 +12,9 @@
 *.sqlite
 *.sqlite3
 data/uploads/
+suam_master_data.json
+data/suam_master_data.json
+suri_db_system/data/
 
 # Application data directories
 gemeni_csv/data/

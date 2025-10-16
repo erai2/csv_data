@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from pathlib import Path
 
 import streamlit as st
 
@@ -16,7 +17,8 @@ from utils.db_manager_v2 import (
 from utils.extractor_v4 import extract_rules_terms_cases
 from utils.visualize import draw_chart_relations
 
-DB_PATH = os.path.join("data", "suri_analysis.db")
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = str(BASE_DIR / "suri_db_system" / "db" / "suri_manual.db")
 init_db(DB_PATH)
 
 st.set_page_config(page_title="명리 자동 해석 시스템 v10.8", layout="wide")
@@ -134,6 +136,20 @@ with TABS[1]:
                     height=250,
                     key=f"case_view_{case['id']}",
                 )
+
+                related_rules = case.get("related_rules") or []
+                related_terms = case.get("related_terms") or []
+
+                if related_rules:
+                    st.markdown("**🔗 연결된 규칙**")
+                    for title in related_rules:
+                        st.write(f"- {title}")
+
+                if related_terms:
+                    st.markdown("**📘 연결된 용어**")
+                    for term in related_terms:
+                        st.write(f"- {term}")
+
                 delete_col, _ = st.columns([1, 4])
                 with delete_col:
                     if st.button(
