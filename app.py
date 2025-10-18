@@ -170,7 +170,10 @@ tabs = st.tabs(
 # ---------------------------------------------------------------------------
 with tabs[0]:
     st.header("📄 문서 업로드 및 지식 정리")
-    uploaded = st.file_uploader("문서를 업로드하세요", type=["txt", "docx", "pdf", "zip"])
+    uploaded = st.file_uploader(
+        "문서를 업로드하세요",
+        type=["txt", "md", "docx", "pdf", "json", "xlsx", "xls", "zip"],
+    )
 
     if uploaded is not None:
         saved_path, is_sensitive = _save_uploaded_file(uploaded)
