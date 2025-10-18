@@ -1,9 +1,10 @@
 import os
 import sqlite3
 from pathlib import Path
+from typing import Dict, Iterable, List, Sequence, Tuple
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 from utils import extractor_v4
 from utils.db_manager import (
@@ -170,7 +171,10 @@ tabs = st.tabs(
 # ---------------------------------------------------------------------------
 with tabs[0]:
     st.header("📄 문서 업로드 및 지식 정리")
-    uploaded = st.file_uploader("문서를 업로드하세요", type=["txt", "docx", "pdf", "zip"])
+    uploaded = st.file_uploader(
+        "문서를 업로드하세요",
+        type=["txt", "md", "docx", "pdf", "json", "xlsx", "xls", "zip"],
+    )
 
     if uploaded is not None:
         saved_path, is_sensitive = _save_uploaded_file(uploaded)
