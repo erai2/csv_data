@@ -1,9 +1,10 @@
 import os
 import sqlite3
 from pathlib import Path
+from typing import Dict, Iterable, List, Sequence, Tuple
 
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 from utils import extractor_v4
 from utils.db_manager import (
