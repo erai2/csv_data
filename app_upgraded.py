@@ -10,7 +10,7 @@ import streamlit as st
 
 # --- 페이지 기본 설정 ---
 st.set_page_config(
-    page_title="수암명리 전문가 시스템",
+    page_title="전문가 시스템",
     page_icon="📚",
     layout="wide",
     initial_sidebar_state="expanded",
