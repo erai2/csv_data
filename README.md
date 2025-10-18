@@ -7,7 +7,7 @@
 | 경로 | 설명 |
 | --- | --- |
 | `app.py` | 규칙/용어/사례를 SQLite DB로 관리하는 기본 Streamlit 앱 |
-| `app_upgraded.py` | 통합 지식 베이스(`suam_master_data.json`)를 시각화하는 전문가용 Streamlit 앱 |
+| `app_upgraded.py` | 통합 지식 베이스(`master_data.json`)를 시각화하는 전문가용 Streamlit 앱 |
 | `suri_db_system/` | 스키마, 샘플 JSON, DB 초기화 스크립트가 포함된 폴더 |
 | `data/templates/suam_master_data.template.json` | 전문가용 앱을 위한 JSON 템플릿 (실제 데이터는 `.gitignore`) |
 | `utils/` | DB 초기화 및 추출 로직 등 공용 유틸리티 |
@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 ## 보안/데이터 정책
 
-- 실제 운영 데이터(`suam_master_data.json`, `suri_db_system/data/` 등)는 `.gitignore`에 포함되어 저장소에 커밋되지 않습니다.
+- 실제 운영 데이터(`master_data.json`, `suri_db_system/data/` 등)는 `.gitignore`에 포함되어 저장소에 커밋되지 않습니다.
 - 추가적인 비공개 설정은 `.env`, `.streamlit/` 디렉터리를 활용해 관리할 수 있습니다.
 
 ## 테스트
