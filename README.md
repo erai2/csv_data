@@ -1,4 +1,4 @@
-# 수암명리 데이터 시스템
+
 
 이 저장소는 Streamlit 기반의 명리 데이터 관리/탐색 도구를 제공합니다. 기본 `app.py`는 SQLite 데이터베이스(`suri_db_system/db/suri_manual.db`)를 사용하고, `app_upgraded.py`는 전문가용 JSON 지식 베이스를 활용합니다.
 
