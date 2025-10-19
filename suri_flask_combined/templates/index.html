@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>suri Q&AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link href="src/css/style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app" class="container mx-auto p-4 md:p-8">
+        <!-- Main Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-900">suri Q&AI</h1>
+            <p class="text-gray-600 mt-2">직업 분석 • 콘텐츠 편집 • 해석 체계</p>
+        </header>
+
+        <!-- Main Tab Navigation -->
+        <nav class="flex justify-center mb-8">
+            <div class="bg-white rounded-xl shadow-lg p-2 flex space-x-1">
+                <button id="tab-analysis"
+                    class="main-tab active px-6 py-3 rounded-lg font-semibold transition duration-300">
+                    📊 직업 분석기
+                </button>
+                <button id="tab-editor" class="main-tab px-6 py-3 rounded-lg font-semibold transition duration-300">
+                    ✏️ 편집기
+                </button>
+                <button id="tab-docs" class="main-tab px-6 py-3 rounded-lg font-semibold transition duration-300">
+                    📚 해석 체계
+                </button>
+            </div>
+        </nav>
+
+        <!-- Tab Content Containers -->
+        <main id="main-content">
+
+            <!-- Tab 1: Job Analysis Tool -->
+            <section id="analysis-content" class="tab-content">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-teal-800 mb-2">suri Q&AI</h2>
+                    <p class="text-gray-600">사주를 통해 알아보는 직업의 비밀</p>
+                </div>
+
+                <!-- Job Category Navigation -->
+                <nav
+                    class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 bg-white p-4 rounded-xl shadow-md sticky top-4 z-10">
+                    <button data-target="gongmuwon"
+                        class="job-nav-btn bg-teal-600 text-white px-4 py-2 rounded-lg shadow hover:bg-teal-700 transition duration-300">공무원</button>
+                    <button data-target="gisuljik"
+                        class="job-nav-btn bg-white text-teal-600 px-4 py-2 rounded-lg shadow hover:bg-teal-50 transition duration-300">기술직</button>
+                    <button data-target="budongsan"
+                        class="job-nav-btn bg-white text-teal-600 px-4 py-2 rounded-lg shadow hover:bg-teal-50 transition duration-300">부동산/건축업</button>
+                    <button data-target="gyoyukja"
+                        class="job-nav-btn bg-white text-teal-600 px-4 py-2 rounded-lg shadow hover:bg-teal-50 transition duration-300">교육자</button>
+                    <button data-target="jangsa"
+                        class="job-nav-btn bg-white text-teal-600 px-4 py-2 rounded-lg shadow hover:bg-teal-50 transition duration-300">사업/무역업</button>
+                </nav>
+
+                <!-- Job Analysis Content Area -->
+                <div id="job-content-area">
+                    <!-- Job analysis content will be dynamically loaded here -->
+                </div>
+            </section>
+
+            <!-- Tab 2: Content Editor -->
+            <section id="editor-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-blue-800 mb-2">수암명리 편집기</h2>
+                    <p class="text-gray-600">콘텐츠 수정 및 새로운 사례 추가</p>
+                </div>
+
+                <!-- Editor Section -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h3 class="text-2xl font-semibold mb-6 text-gray-700">새로운 사례 추가하기</h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label for="new-case-title" class="block font-medium mb-1">사례 제목</label>
+                            <input type="text" id="new-case-title" class="editor-input" placeholder="예: <사례 8> 거부 팔자">
+                        </div>
+                        <div>
+                            <label for="new-case-saju-type" class="block font-medium mb-1">명식 종류</label>
+                            <input type="text" id="new-case-saju-type" class="editor-input" placeholder="예: 乾命">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="new-case-pillars" class="block font-medium mb-1">사주팔자 (8글자)</label>
+                            <input type="text" id="new-case-pillars" class="editor-input"
+                                placeholder="예: 甲辰 丁酉 甲子 癸巳 (띄어쓰기 없이 8자 연속 입력)">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="new-case-analysis" class="block font-medium mb-1">상세 분석 (HTML 태그 사용 가능)</label>
+                            <textarea id="new-case-analysis" class="editor-input editor-textarea"
+                                placeholder="예: <p><strong>분석:</strong> 木火勢가...</p>"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <button id="add-case-btn"
+                            class="px-6 py-2 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition">
+                            사례 추가하기
+                        </button>
+                        <a id="download-json-btn"
+                            class="inline-block px-6 py-2 bg-blue-600 text-white font-bold rounded-lg shadow hover:bg-blue-700 transition"
+                            href="#">
+                            수정된 데이터(JSON) 다운로드
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Editor Navigation for Job Categories -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-700">카테고리별 편집</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button
+                            class="editor-nav-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                            data-category="gongmuwon">공무원</button>
+                        <button
+                            class="editor-nav-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                            data-category="gisuljik">기술직</button>
+                        <button
+                            class="editor-nav-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                            data-category="budongsan">부동산/건축업</button>
+                        <button
+                            class="editor-nav-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                            data-category="gyoyukja">교육자</button>
+                        <button
+                            class="editor-nav-btn bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition"
+                            data-category="jangsa">사업/무역업</button>
+                    </div>
+                    <div id="editor-category-content" class="mt-6">
+                        <p class="text-gray-500">카테고리를 선택하여 해당 내용을 편집하세요.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 3: Analysis Rules & Documentation -->
+            <section id="docs-content" class="tab-content hidden">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-purple-800 mb-2">수암명리 해석 체계</h2>
+                    <p class="text-gray-600">분석 규칙과 실제 사례 종합</p>
+                </div>
+
+                <!-- Documentation Content -->
+                <div class="space-y-8">
+                    <!-- Analysis System Overview -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-purple-700 mb-4">수암명리 해석 순서</h3>
+                        <div class="prose max-w-none">
+                            <ol class="list-decimal list-inside space-y-3 text-gray-700">
+                                <li><strong>원국(씨앗 구조)</strong>
+                                    <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                        <li>日干 허/실 판정 (祿·原神 유무 포함)</li>
+                                        <li>勢(金水 vs 木火) 판정</li>
+                                        <li>궁위(夫宮, 妻宮, 子息宮, 父母宮 등)와 星(夫星, 妻星, 子星, 印星 등) 구분</li>
+                                        <li>合·沖·刑·破·穿, 入墓·庫開 여부 확인</li>
+                                        <li>대상(帶象), 환상(幻象) 작용 여부</li>
+                                    </ul>
+                                </li>
+                                <li><strong>대운(吉凶 흐름)</strong>
+                                    <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                        <li>10년 대운을 <strong>천간 5년 / 지지 5년</strong>으로 나눠 본다</li>
+                                        <li>대운은 <strong>吉凶의 큰 방향</strong>을 결정</li>
+                                        <li>반국(反局), 삼합/육합, 庫開 여부 반드시 반영</li>
+                                    </ul>
+                                </li>
+                                <li><strong>세운(사건 응기)</strong>
+                                    <ul class="list-disc list-inside ml-6 mt-2 space-y-1">
+                                        <li>세운은 대운의 씨앗을 <strong>현실 사건으로 트리거</strong></li>
+                                        <li>반드시 合/沖/刑/破/穿/入墓 같은 <strong>구조적 작용</strong>이 있어야 현실 사건 발생</li>
+                                    </ul>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <!-- Event Conditions -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-purple-700 mb-4">사건화 조건</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div class="p-4 bg-green-50 rounded-lg">
+                                    <h4 class="font-bold text-green-800">재물(財)</h4>
+                                    <p class="text-green-700">財星 + 庫開 + 合/沖</p>
+                                </div>
+                                <div class="p-4 bg-blue-50 rounded-lg">
+                                    <h4 class="font-bold text-blue-800">직장(官)</h4>
+                                    <p class="text-blue-700">官星 + 印星 = 官印相生格 또는 帶象</p>
+                                </div>
+                                <div class="p-4 bg-pink-50 rounded-lg">
+                                    <h4 class="font-bold text-pink-800">혼인(夫妻)</h4>
+                                    <p class="text-pink-700">夫宮·夫星 / 妻宮·妻星이 合·沖·刑·破·入墓</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="p-4 bg-yellow-50 rounded-lg">
+                                    <h4 class="font-bold text-yellow-800">자식</h4>
+                                    <p class="text-yellow-700">子息宮·子息星이 入墓·庫開·穿倒</p>
+                                </div>
+                                <div class="p-4 bg-purple-50 rounded-lg">
+                                    <h4 class="font-bold text-purple-800">부모</h4>
+                                    <p class="text-purple-700">年/月柱 印星·食神의 합/충/형/穿</p>
+                                </div>
+                                <div class="p-4 bg-gray-50 rounded-lg">
+                                    <h4 class="font-bold text-gray-800">帶象(대상) 규칙</h4>
+                                    <p class="text-gray-700">官·財·印 관련 구조만 인정</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-purple-700 mb-4">중요 해석 포인트</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-red-50 border-l-4 border-red-500">
+                                <p class="text-red-800">👉 혼인·연애 해석은 반드시 <strong>궁과 성의 연결(合/沖/入墓/刑/穿)</strong>로 본다.</p>
+                            </div>
+                            <div class="p-4 bg-orange-50 border-l-4 border-orange-500">
+                                <p class="text-orange-800">👉 배우자성은 꼭 官星만이 아니라, 재성·인성·비겁도 합을 통해 전환될 수 있다.</p>
+                            </div>
+                            <div class="p-4 bg-blue-50 border-l-4 border-blue-500">
+                                <p class="text-blue-800">👉 세운은 반드시 <strong>대운의 구조 위에서만</strong> 사건화한다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Case Studies Summary -->
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h3 class="text-2xl font-bold text-purple-700 mb-4">주요 사례 유형</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-gray-800 mb-2">응기론 사례</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• 전기 감전사고</li>
+                                    <li>• 재물 손실</li>
+                                    <li>• 군인 단명</li>
+                                    <li>• 골수암 사망</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-gray-800 mb-2">직업 분석</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• 제약회사 사장</li>
+                                    <li>• 차량 회사 관리직</li>
+                                    <li>• 사업가</li>
+                                    <li>• 동양 철학자</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <h4 class="font-bold text-gray-800 mb-2">혼인 관계</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>• 다혼 사례</li>
+                                    <li>• 독신 사례</li>
+                                    <li>• 비겁쟁부</li>
+                                    <li>• 수중노월</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal for Detailed Case Views -->
+    <div id="modal"
+        class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 hidden opacity-0">
+        <div
+            class="modal-content bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col transform scale-95">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 id="modal-title" class="text-2xl font-bold text-teal-800"></h2>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-800 text-3xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto">
+                <div id="modal-body" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="modal-saju" class="flex flex-col items-center justify-center"></div>
+                    <div id="modal-analysis" class="prose max-w-none text-gray-700"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/script.js"></script>
+</body>
+
+</html>
